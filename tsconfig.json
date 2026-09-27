@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@distrifs/shared": ["packages/shared/src/index.ts"],
+      "@distrifs/chunker": ["packages/chunker/src/index.ts"],
+      "@distrifs/db": ["packages/db/src/index.ts"]
+    }
+  },
+  "include": ["packages/**/*.ts", "apps/gateway/**/*.ts", "apps/metadata/**/*.ts", "apps/storage-node/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "apps/web", "**/dist/**"]
+}

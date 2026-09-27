@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+.next/
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+
+# Local storage node data (never commit chunk data)
+storage/
+
+# Prisma generated client
+packages/db/prisma/generated/
+
+# Environment files — NEVER commit real secrets.
+# Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

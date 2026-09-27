@@ -1,0 +1,32 @@
+{
+  "name": "distrifs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DistriFS - an educational distributed file storage system (chunking, replication, fault tolerance, integrity).",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/start-cluster.mjs",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "npm run db:generate --workspace @distrifs/db",
+    "db:migrate": "npm run db:migrate --workspace @distrifs/db",
+    "db:seed": "npm run db:seed --workspace @distrifs/db",
+    "db:reset": "npm run db:reset --workspace @distrifs/db",
+    "benchmark": "node scripts/benchmark.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
