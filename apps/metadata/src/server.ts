@@ -85,9 +85,13 @@ export async function buildServer(): Promise<FastifyInstance> {
     }
   });
 
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
     if (error instanceof AppError) {
       reply.code(error.statusCode).send({ error: { code: error.code, message: error.message, details: error.details } });
+      return;
+    }
+    if (error.statusCode && error.statusCode < 500) {
+      reply.code(error.statusCode).send({ error: { code: ErrorCodes.VALIDATION_ERROR, message: error.message } });
       return;
     }
     app.log.error(error);

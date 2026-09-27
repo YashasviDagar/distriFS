@@ -37,14 +37,16 @@ export interface ClusterStatusResponse {
   }>;
 }
 
-function headers(): Record<string, string> {
-  return { "content-type": "application/json", "x-internal-token": getConfig().INTERNAL_SERVICE_TOKEN };
+function headers(hasBody: boolean): Record<string, string> {
+  const base: Record<string, string> = { "x-internal-token": getConfig().INTERNAL_SERVICE_TOKEN };
+  if (hasBody) base["content-type"] = "application/json";
+  return base;
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getConfig().METADATA_URL}${path}`, {
     ...init,
-    headers: { ...headers(), ...(init?.headers ?? {}) },
+    headers: { ...headers(init?.body !== undefined && init?.body !== null), ...(init?.headers ?? {}) },
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
