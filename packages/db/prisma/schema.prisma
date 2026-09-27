@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum NodeStatus {
+  HEALTHY
+  OFFLINE
+  DECOMMISSIONED
+}
+
+enum ReplicaStatus {
+  PENDING
+  HEALTHY
+  CORRUPT
+  MISSING
+  QUARANTINED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  files File[]
+
+  @@map("users")
+}
+
+model File {
+  id               String    @id @default(uuid())
+  ownerId          String    @map("owner_id")
+  name             String
+  size             BigInt
+  chunkSize        Int       @map("chunk_size")
+  totalChunks      Int       @map("total_chunks")
+  currentVersionNo Int       @default(1) @map("current_version_no")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  owner    User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  versions FileVersion[]
+
+  @@index([ownerId])
+  @@map("files")
+}
+
+model FileVersion {
+  id          String   @id @default(uuid())
+  fileId      String   @map("file_id")
+  versionNo   Int      @map("version_no")
+  size        BigInt
+  totalChunks Int      @map("total_chunks")
+  checksum    String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  file   File    @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  chunks Chunk[]
+
+  @@unique([fileId, versionNo])
+  @@index([fileId])
+  @@map("file_versions")
+}
+
+model Chunk {
+  id         String   @id @default(uuid())
+  versionId  String   @map("version_id")
+  chunkIndex Int      @map("chunk_index")
+  size       Int
+  checksum   String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  version  FileVersion    @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  replicas ChunkReplica[]
+
+  @@unique([versionId, chunkIndex])
+  @@index([versionId])
+  @@map("chunks")
+}
+
+model StorageNode {
+  id             String     @id @default(uuid())
+  nodeName       String     @unique @map("node_name")
+  host           String
+  port           Int
+  status         NodeStatus @default(HEALTHY)
+  capacityBytes  BigInt     @map("capacity_bytes")
+  availableBytes BigInt     @map("available_bytes")
+  lastHeartbeat  DateTime?  @map("last_heartbeat")
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  replicas ChunkReplica[]
+
+  @@map("storage_nodes")
+}
+
+model ChunkReplica {
+  id             String        @id @default(uuid())
+  chunkId        String        @map("chunk_id")
+  nodeId         String        @map("node_id")
+  status         ReplicaStatus @default(PENDING)
+  storedChecksum String?       @map("stored_checksum")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  chunk Chunk       @relation(fields: [chunkId], references: [id], onDelete: Cascade)
+  node  StorageNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@unique([chunkId, nodeId])
+  @@index([nodeId])
+  @@map("chunk_replicas")
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  type      String
+  nodeId    String?  @map("node_id")
+  chunkId   String?  @map("chunk_id")
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("events")
+}
+
+model BenchmarkRun {
+  id                String   @id @default(uuid())
+  label             String
+  replicationFactor Int      @map("replication_factor")
+  operation         String
+  bytes             BigInt
+  durationMs        Int      @map("duration_ms")
+  chunkCount        Int      @map("chunk_count")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("benchmark_runs")
+}
