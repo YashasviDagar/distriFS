@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { sha256Hex } from "@distrifs/chunker";
-import { ErrorCodes } from "@distrifs/shared";
+import { ErrorCodes, verifyInternalRequest } from "@distrifs/shared";
 import { ChunkStore } from "./chunkStore";
 import type { StorageNodeRuntimeConfig } from "./config";
 
@@ -24,8 +24,8 @@ export async function buildServer(
 
   app.addHook("onRequest", async (request, reply) => {
     if (request.url === "/health" || request.url.startsWith("/health?")) return;
-    if (request.headers["x-internal-token"] !== config.internalToken) {
-      reply.code(401).send({ error: { code: ErrorCodes.UNAUTHORIZED, message: "Invalid internal token" } });
+    if (!verifyInternalRequest(config.internalToken, request.method, request.url, request.headers)) {
+      reply.code(401).send({ error: { code: ErrorCodes.UNAUTHORIZED, message: "Invalid internal signature" } });
     }
   });
 

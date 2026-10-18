@@ -1,4 +1,4 @@
-import { getConfig } from "@distrifs/shared";
+import { getConfig, signInternalRequest } from "@distrifs/shared";
 
 export interface NodeAddress {
   host: string;
@@ -9,8 +9,8 @@ function baseUrl(node: NodeAddress): string {
   return `http://${node.host}:${node.port}`;
 }
 
-function internalHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return { "x-internal-token": getConfig().INTERNAL_SERVICE_TOKEN, ...extra };
+function internalHeaders(method: string, path: string, extra: Record<string, string> = {}): Record<string, string> {
+  return { ...signInternalRequest(getConfig().INTERNAL_SERVICE_TOKEN, method, path), ...extra };
 }
 
 async function ensureOk(response: Response, action: string): Promise<void> {
@@ -26,9 +26,10 @@ export async function putChunk(
   data: Buffer,
   checksum: string,
 ): Promise<void> {
-  const response = await fetch(`${baseUrl(node)}/chunks/${chunkId}`, {
+  const path = `/chunks/${chunkId}`;
+  const response = await fetch(`${baseUrl(node)}${path}`, {
     method: "PUT",
-    headers: internalHeaders({ "content-type": "application/octet-stream", "x-chunk-checksum": checksum }),
+    headers: internalHeaders("PUT", path, { "content-type": "application/octet-stream", "x-chunk-checksum": checksum }),
     body: new Uint8Array(data),
   });
   await ensureOk(response, `PUT chunk ${chunkId} to ${node.host}:${node.port}`);
@@ -38,8 +39,9 @@ export async function getChunk(
   node: NodeAddress,
   chunkId: string,
 ): Promise<{ buffer: Buffer; checksum: string | null }> {
-  const response = await fetch(`${baseUrl(node)}/chunks/${chunkId}`, {
-    headers: internalHeaders(),
+  const path = `/chunks/${chunkId}`;
+  const response = await fetch(`${baseUrl(node)}${path}`, {
+    headers: internalHeaders("GET", path),
   });
   await ensureOk(response, `GET chunk ${chunkId} from ${node.host}:${node.port}`);
   const arrayBuffer = await response.arrayBuffer();
@@ -47,26 +49,29 @@ export async function getChunk(
 }
 
 export async function deleteChunk(node: NodeAddress, chunkId: string): Promise<void> {
-  const response = await fetch(`${baseUrl(node)}/chunks/${chunkId}`, {
+  const path = `/chunks/${chunkId}`;
+  const response = await fetch(`${baseUrl(node)}${path}`, {
     method: "DELETE",
-    headers: internalHeaders(),
+    headers: internalHeaders("DELETE", path),
   });
   await ensureOk(response, `DELETE chunk ${chunkId} on ${node.host}:${node.port}`);
 }
 
 export async function setNodeFailure(node: NodeAddress, failed: boolean): Promise<void> {
   const path = failed ? "fail" : "recover";
-  const response = await fetch(`${baseUrl(node)}/internal/admin/${path}`, {
+  const url = `/internal/admin/${path}`;
+  const response = await fetch(`${baseUrl(node)}${url}`, {
     method: "POST",
-    headers: internalHeaders(),
+    headers: internalHeaders("POST", url),
   });
   await ensureOk(response, `${failed ? "fail" : "recover"} node ${node.host}:${node.port}`);
 }
 
 export async function corruptChunk(node: NodeAddress, chunkId: string): Promise<void> {
-  const response = await fetch(`${baseUrl(node)}/internal/admin/chunks/${chunkId}/corrupt`, {
+  const path = `/internal/admin/chunks/${chunkId}/corrupt`;
+  const response = await fetch(`${baseUrl(node)}${path}`, {
     method: "POST",
-    headers: internalHeaders(),
+    headers: internalHeaders("POST", path),
   });
   await ensureOk(response, `corrupt chunk ${chunkId} on ${node.host}:${node.port}`);
 }

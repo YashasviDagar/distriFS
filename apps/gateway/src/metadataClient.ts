@@ -1,4 +1,4 @@
-import { getConfig, type PlacementStrategy } from "@distrifs/shared";
+import { getConfig, signInternalRequest, type PlacementStrategy } from "@distrifs/shared";
 
 export interface ReplicaTarget {
   nodeId: string;
@@ -37,8 +37,8 @@ export interface ClusterStatusResponse {
   }>;
 }
 
-function headers(hasBody: boolean): Record<string, string> {
-  const base: Record<string, string> = { "x-internal-token": getConfig().INTERNAL_SERVICE_TOKEN };
+function headers(method: string, path: string, hasBody: boolean): Record<string, string> {
+  const base: Record<string, string> = signInternalRequest(getConfig().INTERNAL_SERVICE_TOKEN, method, path);
   if (hasBody) base["content-type"] = "application/json";
   return base;
 }
@@ -46,7 +46,10 @@ function headers(hasBody: boolean): Record<string, string> {
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getConfig().METADATA_URL}${path}`, {
     ...init,
-    headers: { ...headers(init?.body !== undefined && init?.body !== null), ...(init?.headers ?? {}) },
+    headers: {
+      ...headers(init?.method ?? "GET", path, init?.body !== undefined && init?.body !== null),
+      ...(init?.headers ?? {}),
+    },
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");

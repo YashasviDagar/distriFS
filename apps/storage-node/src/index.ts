@@ -1,12 +1,13 @@
-import { getConfig, loadEnv } from "@distrifs/shared";
+import { getConfig, loadEnv, signInternalRequest } from "@distrifs/shared";
 import { ChunkStore } from "./chunkStore";
 import { loadNodeConfig } from "./config";
 import { buildServer, type NodeState } from "./server";
 
 async function register(config: ReturnType<typeof loadNodeConfig>, store: ChunkStore): Promise<void> {
-  const response = await fetch(`${config.metadataUrl}/internal/nodes/register`, {
+  const path = "/internal/nodes/register";
+  const response = await fetch(`${config.metadataUrl}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-internal-token": config.internalToken },
+    headers: { "content-type": "application/json", ...signInternalRequest(config.internalToken, "POST", path) },
     body: JSON.stringify({
       nodeName: config.id,
       host: config.host,
@@ -21,9 +22,10 @@ async function register(config: ReturnType<typeof loadNodeConfig>, store: ChunkS
 }
 
 async function heartbeat(config: ReturnType<typeof loadNodeConfig>, store: ChunkStore): Promise<void> {
-  const response = await fetch(`${config.metadataUrl}/internal/nodes/heartbeat`, {
+  const path = "/internal/nodes/heartbeat";
+  const response = await fetch(`${config.metadataUrl}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-internal-token": config.internalToken },
+    headers: { "content-type": "application/json", ...signInternalRequest(config.internalToken, "POST", path) },
     body: JSON.stringify({
       nodeName: config.id,
       host: config.host,

@@ -1,4 +1,4 @@
-import { getConfig } from "@distrifs/shared";
+import { getConfig, signInternalRequest } from "@distrifs/shared";
 
 export interface NodeAddress {
   host: string;
@@ -15,12 +15,13 @@ export async function putChunkToNode(
   data: Buffer,
   checksum: string,
 ): Promise<void> {
-  const response = await fetch(`${baseUrl(node)}/chunks/${chunkId}`, {
+  const path = `/chunks/${chunkId}`;
+  const response = await fetch(`${baseUrl(node)}${path}`, {
     method: "PUT",
     headers: {
       "content-type": "application/octet-stream",
       "x-chunk-checksum": checksum,
-      "x-internal-token": getConfig().INTERNAL_SERVICE_TOKEN,
+      ...signInternalRequest(getConfig().INTERNAL_SERVICE_TOKEN, "PUT", path),
     },
     body: new Uint8Array(data),
   });
@@ -33,8 +34,9 @@ export async function getChunkFromNode(
   node: NodeAddress,
   chunkId: string,
 ): Promise<{ buffer: Buffer; checksum: string | null }> {
-  const response = await fetch(`${baseUrl(node)}/chunks/${chunkId}`, {
-    headers: { "x-internal-token": getConfig().INTERNAL_SERVICE_TOKEN },
+  const path = `/chunks/${chunkId}`;
+  const response = await fetch(`${baseUrl(node)}${path}`, {
+    headers: signInternalRequest(getConfig().INTERNAL_SERVICE_TOKEN, "GET", path),
   });
   if (!response.ok) {
     throw new Error(`GET chunk ${chunkId} from ${node.host}:${node.port} failed (${response.status})`);

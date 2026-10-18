@@ -10,6 +10,7 @@ import {
   ReplicaStatus,
   getConfig,
   selectNodes,
+  verifyInternalRequest,
   type PlacementStrategy,
 } from "@distrifs/shared";
 import { logEvent } from "./events";
@@ -79,9 +80,8 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   app.addHook("onRequest", async (request: FastifyRequest, reply: FastifyReply) => {
     if (request.url === "/health" || request.url.startsWith("/health?")) return;
-    const token = request.headers["x-internal-token"];
-    if (token !== config.INTERNAL_SERVICE_TOKEN) {
-      reply.code(401).send({ error: { code: ErrorCodes.UNAUTHORIZED, message: "Invalid internal token" } });
+    if (!verifyInternalRequest(config.INTERNAL_SERVICE_TOKEN, request.method, request.url, request.headers)) {
+      reply.code(401).send({ error: { code: ErrorCodes.UNAUTHORIZED, message: "Invalid internal signature" } });
     }
   });
 
