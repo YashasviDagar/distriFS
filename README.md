@@ -383,7 +383,7 @@ Coverage includes:
 - **Replication** — correct replica count, distinct placement, replica recovery.
 - **Failure** — node failure, heartbeat timeout, recovery, multiple failures.
 - **Integrity** — checksum correctness, corruption detection, recovery from a healthy replica.
-- **Authorization** — users cannot access files belonging to other users.
+- **Authorization** — token types, refresh flow and admin-only routes (gateway tests with a mocked database).
 
 See `docs/testing.md` for the full strategy.
 
@@ -391,16 +391,15 @@ See `docs/testing.md` for the full strategy.
 
 ## Performance Benchmarking
 
-A scripted harness (`scripts/benchmark.ts`) measures real behavior:
+`npm run benchmark` runs `scripts/benchmark.mjs` against a running gateway. It measures:
 
-- Upload throughput, download throughput
-- Chunking overhead, replication overhead
-- Recovery time, node failure detection latency
-- Metadata lookup latency, storage utilization
+- Upload and download throughput per file size, with a SHA-256 check of the downloaded bytes
+- Aggregate throughput for concurrent uploads
 
-Results are recorded in the `benchmark_runs` table and compared across
-replication factors **1, 2, and 3**. All figures come from actual runs — none
-are fabricated. Methodology is documented in `docs/testing.md`.
+Results print to the console; nothing is fabricated or stored. Compare replication
+factors 1, 2 and 3 by restarting the cluster with `REPLICATION_FACTOR` changed.
+Recovery time, failure-detection latency and DB-recorded `benchmark_runs` are not
+automated yet. Methodology is documented in `docs/testing.md`.
 
 ---
 
