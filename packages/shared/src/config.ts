@@ -33,6 +33,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   JWT_SECRET: z.string().default("dev-insecure-secret"),
   JWT_EXPIRES_IN: z.string().default("1h"),
+  JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   INTERNAL_SERVICE_TOKEN: z.string().default("dev-internal-token"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
 

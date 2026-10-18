@@ -3,8 +3,8 @@ import { forbidden, unauthorized, type UserRole } from "@distrifs/shared";
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
-    payload: { sub: string; email: string; role: UserRole };
-    user: { sub: string; email: string; role: UserRole };
+    payload: { sub: string; email: string; role: UserRole; typ?: "access" | "refresh" };
+    user: { sub: string; email: string; role: UserRole; typ?: "access" | "refresh" };
   }
 }
 
@@ -13,6 +13,9 @@ export async function authenticate(request: FastifyRequest, _reply: FastifyReply
     await request.jwtVerify();
   } catch {
     throw unauthorized("A valid access token is required");
+  }
+  if (request.user.typ === "refresh") {
+    throw unauthorized("A refresh token cannot be used to access this resource");
   }
 }
 

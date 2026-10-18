@@ -15,6 +15,7 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/**/*.test.ts", "packages/**/src/**/*.test.ts"],
+    env: { LOG_LEVEL: "silent" },
     testTimeout: 20000,
     hookTimeout: 30000,
   },

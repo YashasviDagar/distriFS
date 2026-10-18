@@ -42,6 +42,8 @@ function parse<T>(schema: z.ZodType<T>, data: unknown): T {
   return result.data;
 }
 
+const refreshSchema = z.object({ refreshToken: z.string().min(1) });
+
 export async function buildServer(): Promise<FastifyInstance> {
   const config = getConfig();
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
@@ -74,6 +76,15 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   app.get("/health", async () => ({ status: "ok", service: "gateway" }));
 
+  function issueTokens(user: { id: string; email: string; role: "USER" | "ADMIN" }) {
+    const claims = { sub: user.id, email: user.email, role: user.role };
+    return {
+      token: app.jwt.sign({ ...claims, typ: "access" }),
+      refreshToken: app.jwt.sign({ ...claims, typ: "refresh" }, { expiresIn: config.JWT_REFRESH_EXPIRES_IN }),
+      user: { id: user.id, email: user.email, role: user.role },
+    };
+  }
+
   app.post("/api/auth/register", async (request, reply) => {
     const body = parse(credentialsSchema, request.body);
     const existing = await prisma.user.findUnique({ where: { email: body.email } });
@@ -82,9 +93,8 @@ export async function buildServer(): Promise<FastifyInstance> {
     const user = await prisma.user.create({
       data: { email: body.email, passwordHash, role: "USER" },
     });
-    const token = app.jwt.sign({ sub: user.id, email: user.email, role: user.role });
     reply.code(201);
-    return { token, user: { id: user.id, email: user.email, role: user.role } };
+    return issueTokens(user);
   });
 
   app.post("/api/auth/login", async (request) => {
@@ -93,8 +103,21 @@ export async function buildServer(): Promise<FastifyInstance> {
     if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) {
       throw unauthorized("Invalid email or password");
     }
-    const token = app.jwt.sign({ sub: user.id, email: user.email, role: user.role });
-    return { token, user: { id: user.id, email: user.email, role: user.role } };
+    return issueTokens(user);
+  });
+
+  app.post("/api/auth/refresh", async (request) => {
+    const body = parse(refreshSchema, request.body);
+    let claims: { sub: string; typ?: string };
+    try {
+      claims = app.jwt.verify<{ sub: string; typ?: string }>(body.refreshToken);
+    } catch {
+      throw unauthorized("Invalid or expired refresh token");
+    }
+    if (claims.typ !== "refresh") throw unauthorized("Invalid or expired refresh token");
+    const user = await prisma.user.findUnique({ where: { id: claims.sub } });
+    if (!user) throw unauthorized("Invalid or expired refresh token");
+    return issueTokens(user);
   });
 
   app.get("/api/me", { preHandler: authenticate }, async (request) => request.user);
