@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { sha256Hex } from "@distrifs/chunker";
-import { ErrorCodes, verifyInternalRequest } from "@distrifs/shared";
+import { ErrorCodes, getConfig, verifyInternalRequest } from "@distrifs/shared";
 import { ChunkStore } from "./chunkStore";
 import type { StorageNodeRuntimeConfig } from "./config";
 
@@ -14,7 +14,10 @@ export async function buildServer(
   store: ChunkStore,
   state: NodeState,
 ): Promise<FastifyInstance> {
-  const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "warn" } });
+  const app = Fastify({
+    logger: { level: process.env.LOG_LEVEL ?? "warn" },
+    bodyLimit: getConfig().CHUNK_SIZE_BYTES + 1024 * 1024,
+  });
 
   await app.register(cors, { origin: true });
 

@@ -19,7 +19,7 @@ function signed(method: string, url: string, extra: Record<string, string> = {})
 
 beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), "distrifs-node-"));
-  store = new ChunkStore(root, 1024 * 1024);
+  store = new ChunkStore(root, 16 * 1024 * 1024);
   await store.init();
   app = await buildServer(
     {
@@ -27,7 +27,7 @@ beforeAll(async () => {
       host: "127.0.0.1",
       port: 0,
       dataDir: root,
-      capacityBytes: 1024 * 1024,
+      capacityBytes: 16 * 1024 * 1024,
       metadataUrl: "http://127.0.0.1:1",
       internalToken: secret,
       heartbeatIntervalMs: 5000,
@@ -79,6 +79,21 @@ describe("storage node API", () => {
     expect(get.statusCode).toBe(200);
     expect(get.rawPayload.equals(data)).toBe(true);
     expect(get.headers["x-chunk-checksum"]).toBe(sha256Hex(data));
+  });
+
+  it("accepts a chunk larger than the default 1 MiB Fastify body limit", async () => {
+    const big = Buffer.alloc(3 * 1024 * 1024, 7);
+    const res = await app.inject({
+      method: "PUT",
+      url: "/chunks/big",
+      payload: big,
+      headers: signed("PUT", "/chunks/big", {
+        "content-type": "application/octet-stream",
+        "x-chunk-checksum": sha256Hex(big),
+      }),
+    });
+    expect(res.statusCode).toBe(200);
+    await store.delete("big");
   });
 
   it("rejects an upload whose checksum does not match", async () => {
