@@ -32,3 +32,6 @@ npm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Personal study notes (never commit)
+PROJECT_GUIDE.md
