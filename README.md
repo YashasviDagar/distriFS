@@ -1,4 +1,20 @@
-# DistriFS — Distributed File Storage System
+<div align="center">
+
+<img src="docs/assets/banner.svg" alt="DistriFS — distributed file storage you can watch break and heal" width="100%">
+
+<br>
+
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Fastify](https://img.shields.io/badge/Fastify-5-000000?style=for-the-badge&logo=fastify&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-metadata-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+
+**[Overview](#overview)** &nbsp;•&nbsp; **[Architecture](#architecture)** &nbsp;•&nbsp; **[Getting Started](#getting-started)** &nbsp;•&nbsp; **[Demo](#demonstration-procedure)** &nbsp;•&nbsp; **[Docs](#documentation)**
+
+</div>
+
+---
 
 A simplified, educational distributed file system that demonstrates the core
 concepts behind systems like HDFS, Ceph, and Amazon S3: **file chunking,
